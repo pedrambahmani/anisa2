@@ -1,0 +1,51 @@
+---
+- name: Create user alireza with restricted access
+  hosts: all
+  become: true
+
+  vars:
+    username: alireza
+    password_plain: "123456"
+    home_dir: "/home/alireza"
+    allowed_dir: "/var/log"
+
+  tasks:
+    - name: Install necessary packages (for password hashing)
+      package:
+        name: python3-passlib
+        state: present
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"
+
+    - name: Generate hashed password
+      ansible.builtin.set_fact:
+        user_password: "{{ password_plain | password_hash('sha512') }}"
+
+    - name: Create user {{ username }}
+      user:
+        name: "{{ username }}"
+        password: "{{ user_password }}"
+        home: "{{ home_dir }}"
+        create_home: yes
+        shell: /bin/bash
+
+    - name: Restrict user access to only /var/log using chroot jail (basic way)
+      block:
+        - name: Install rssh (restricted shell)
+          package:
+            name: rssh
+            state: present
+          when: ansible_os_family == "Debian" or ansible_os_family == "RedHat"
+
+        - name: Set rssh as user shell
+          user:
+            name: "{{ username }}"
+            shell: /usr/bin/rssh
+
+        - name: Configure rssh for user
+          copy:
+            dest: "/etc/rssh.conf"
+            content: |
+              allowallusers
+              chrootpath = /var/log
+          mode: '0644'
+      when: ansible_os_family == "Debian" or ansible_os_family == "RedHat"
