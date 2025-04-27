@@ -1,1 +1,5 @@
 file 6 created on remote repo 
+file 6 editedfile 6 is ok 
+file 6 must get api from https://pedinet.net 
+file 6 = input , value 
+
