@@ -1,0 +1,17 @@
+---
+- name: Get and store system IP address
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Get IP address
+      command: hostname -I
+      register: ip_output
+
+    - name: Save IP address to /home/ip.txt
+      copy:
+        content: "{{ ip_output.stdout }}"
+        dest: /home/ip.txt
+        owner: root
+        group: root
+        mode: '0644'
